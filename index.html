@@ -405,7 +405,13 @@ textarea.form-input{resize:vertical;min-height:80px}
   <div class="tab-content active" id="tabTraining">
     <div class="layout">
       <div class="sidebar">
-        <div class="sidebar-top"><div class="sidebar-label">교육 모듈</div></div>
+        <div class="sidebar-top">
+          <div class="sidebar-label" style="margin-bottom:8px">교육 모듈</div>
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="moduleSearch" placeholder="모듈 검색..." oninput="renderSidebar()">
+          </div>
+        </div>
         <div class="module-list" id="moduleList"></div>
         <button class="add-module-btn" onclick="openModuleModal()" id="addModuleBtn">＋ 새 교육 모듈 추가</button>
       </div>
@@ -969,8 +975,11 @@ function switchMainTab(tab){
 // ══ SIDEBAR ══
 function renderSidebar(){
   const list=document.getElementById('moduleList');
+  const q=(document.getElementById('moduleSearch')?document.getElementById('moduleSearch').value||'':'').toLowerCase();
+  const filtered=modules.filter(m=>!q||m.name.toLowerCase().includes(q));
   if(!modules.length){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">모듈이 없어요.</div>';return;}
-  list.innerHTML=modules.map(m=>{
+  if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">검색 결과가 없어요.</div>';return;}
+  list.innerHTML=filtered.map(m=>{
     const total=(m.items||[]).length,done=(m.items||[]).filter(i=>i.checked).length;
     const pct=total?Math.round(done/total*100):0;
     return `<div class="module-item ${m.id===currentModuleId?'active':''}" onclick="selectModule('${m.id}')">
