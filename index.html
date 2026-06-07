@@ -451,7 +451,11 @@ textarea.form-input{resize:vertical;min-height:80px}
   <!-- TAB: 영양제 관리 -->
   <div class="tab-content" id="tabSupp">
     <div class="page-container" style="max-width:100%">
-      <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:20px;font-weight:900">🌿 영양제 관리</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">할인 품목 및 재고 관리</div>
+        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <div class="search-wrap" style="min-width:180px">
             <span class="search-icon">🔍</span>
@@ -713,6 +717,13 @@ textarea.form-input{resize:vertical;min-height:80px}
           <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="savePhoto()">💾 저장</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+<!-- Photo file input (hidden) -->
+<input type="file" id="photoFileInput2" accept="image/*" style="display:none">
+
+      <!-- Text tab content -->
       <div id="textTabContent" style="display:none">
         <div class="form-group">
           <label class="form-label">제목</label>
@@ -720,16 +731,10 @@ textarea.form-input{resize:vertical;min-height:80px}
         </div>
         <div class="form-group">
           <label class="form-label">내용</label>
-          <textarea class="form-input" id="textContentInput" rows="5" placeholder="교육 내용, 메모, 안내사항 등을 입력하세요..." style="resize:vertical;line-height:1.6;min-height:120px"></textarea>
+          <textarea class="form-input" id="textContentInput" rows="8" placeholder="교육 내용, 메모, 안내사항 등을 입력하세요..." style="resize:vertical;line-height:1.6"></textarea>
         </div>
         <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="saveText()">💾 저장</button>
       </div>
-    </div>
-  </div>
-</div>
-<!-- Photo file input (hidden) -->
-<input type="file" id="photoFileInput2" accept="image/*" style="display:none">
-
 
 
 <script>
@@ -1290,8 +1295,8 @@ async function saveText(){
 function viewText(content,name){
   document.getElementById('mediaPlayerArea').innerHTML=
     `<div style="background:white;border-radius:10px;padding:20px 24px;max-height:70vh;overflow-y:auto">
-      <div style="font-size:16px;font-weight:800;margin-bottom:14px;color:var(--text)">📝 \${esc(name)}</div>
-      <div style="font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap">\${esc(content)}</div>
+      <div style="font-size:16px;font-weight:800;margin-bottom:14px;color:var(--text)">📝 ${esc(name)}</div>
+      <div style="font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap">${esc(content)}</div>
     </div>`;
   document.getElementById('mediaModalTitle').textContent=name;
   document.getElementById('mediaModalInfo').textContent='텍스트';
@@ -1339,8 +1344,7 @@ function renderPatientList(){
       <div class="patient-avatar">${p.name.charAt(0)}</div>
       <div class="patient-info">
         <div class="patient-name">${esc(p.name)}</div>
-        <div class="patient-phone">${p.phone||'연락처 없음'}${p.dob?' · '+p.dob:''}</div>
-        <div class="patient-phone" style="font-size:11px">${p.purchases?p.purchases.length:0}건</div>
+        <div class="patient-phone">${p.phone||'연락처 없음'} · ${p.purchases?p.purchases.length:0}건</div>
       </div>
     </div>`).join('');
 }
@@ -1582,42 +1586,9 @@ async function deleteUserAdmin(uid2,name){
   });
 }
 // Keep openUserModal / closeUserModal / saveUser stubs for compat
-function openUserModal(){
-  document.getElementById('userModalTitle').textContent='직원 추가';
-  document.getElementById('userFullName').value='';
-  document.getElementById('userUsername').value='';
-  document.getElementById('userPassword').value='';
-  document.getElementById('userRole').value='staff';
-  document.getElementById('userModalErr').textContent='';
-  document.getElementById('userModalOverlay').classList.remove('hidden');
-}
-function closeUserModal(){
-  document.getElementById('userModalOverlay').classList.add('hidden');
-}
-async function saveUser(){
-  const fullName=document.getElementById('userFullName').value.trim();
-  const username=document.getElementById('userUsername').value.trim();
-  const password=document.getElementById('userPassword').value;
-  const role=document.getElementById('userRole').value;
-  const errEl=document.getElementById('userModalErr');
-  errEl.textContent='';
-  if(!fullName){errEl.textContent='이름을 입력하세요.';return;}
-  if(username.length<4){errEl.textContent='아이디는 4자 이상 입력하세요.';return;}
-  if(password.length<8){errEl.textContent='비밀번호는 8자 이상 입력하세요.';return;}
-  showLoading('직원 계정 생성 중...');
-  try{
-    const email=username+'@jdwpharm.app';
-    const cred=await fauth.createUserWithEmailAndPassword(email,password);
-    await fdb.collection('users').doc(cred.user.uid).set({
-      username,fullName,role,email,createdAt:Date.now()
-    });
-    closeUserModal();
-    loadUsers();
-    alert(fullName+'님 계정이 생성됐어요.');
-  }catch(e){
-    errEl.textContent=e.code==='auth/email-already-in-use'?'이미 사용 중인 아이디입니다.':'오류: '+e.message;
-  }finally{hideLoading();}
-}
+function openUserModal(){}
+function closeUserModal(){}
+function saveUser(){}
 
 // ══ CONFIRM ══
 function openConfirm(icon,msg,sub,onOk){
