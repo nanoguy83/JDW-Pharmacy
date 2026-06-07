@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💊 수지정다운약국 시스템</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2563EB;--primary-light:#EFF6FF;--primary-dark:#1D4ED8;
+  --success:#16A34A;--danger:#DC2626;--warning:#D97706;
+  --bg:#F1F5F9;--card:#FFFFFF;--border:#E2E8F0;
+  --text:#1E293B;--muted:#64748B;--sidebar-w:270px;
+}
+body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ── LOGIN ── */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1E3A8A,#2563EB,#7C3AED);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:white;border-radius:24px;padding:40px 36px;width:100%;max-width:400px;box-shadow:0 32px 80px rgba(0,0,0,0.3);animation:fadeUp 0.4s ease}
+@keyframes fadeUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.login-logo{text-align:center;font-size:48px;margin-bottom:8px}
+.login-title{text-align:center;font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px}
+.login-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:28px}
+.login-tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:22px}
+.login-tab{flex:1;padding:8px;text-align:center;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted);transition:0.15s}
+.login-tab.active{background:white;color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.login-err{background:#FEF2F2;color:var(--danger);font-size:13px;padding:10px 14px;border-radius:9px;margin-bottom:14px;display:none;border:1px solid #FECACA}
+.login-hint{background:var(--primary-light);color:var(--primary);font-size:12px;padding:10px 14px;border-radius:9px;margin-top:16px;text-align:center}
+
+/* ── HEADER ── */
+.header{background:linear-gradient(135deg,#1E40AF,#2563EB);color:white;padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(30,64,175,0.35)}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-logo{font-size:22px}
+.header-title{font-size:17px;font-weight:800;letter-spacing:-0.3px}
+.header-sub{font-size:12px;opacity:0.7;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:8px}
+.user-badge{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
+.role-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;display:inline-block}
+.role-dot.staff{background:#FCD34D}
+
+/* ── TABS ── */
+.tab-bar{background:white;border-bottom:1px solid var(--border);display:flex;padding:0 20px;gap:2px;position:sticky;top:62px;z-index:150}
+.tab-btn{padding:14px 20px;font-size:13px;font-weight:700;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;transition:0.15s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.tab-btn:hover{color:var(--primary)}
+.tab-btn.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tab-content{display:none}
+.tab-content.active{display:flex}
+#tabPatient.active,#tabSupp.active,#tabUsers.active{display:block}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:calc(100vh - 110px)}
+.sidebar{width:var(--sidebar-w);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:110px;height:calc(100vh - 110px);overflow-y:auto}
+.sidebar-top{padding:16px 14px 10px;border-bottom:1px solid var(--border)}
+.sidebar-label{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.module-list{flex:1;padding:8px;overflow-y:auto}
+.module-item{padding:11px 12px;border-radius:10px;cursor:pointer;margin-bottom:3px;display:flex;align-items:center;gap:10px;transition:0.15s;font-size:13px;font-weight:600;position:relative}
+.module-item:hover{background:var(--bg)}
+.module-item.active{background:var(--primary);color:white}
+.module-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}
+.module-icon svg{width:22px;height:22px;vertical-align:middle}
+.module-info{flex:1;min-width:0}
+.module-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.module-meta{font-size:11px;opacity:0.65;margin-top:1px}
+.module-pct{font-size:10px;font-weight:700;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:10px;flex-shrink:0}
+.module-item:not(.active) .module-pct{background:var(--primary-light);color:var(--primary)}
+.add-module-btn{margin:8px;padding:10px;border:2px dashed var(--border);border-radius:10px;background:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;width:calc(100% - 16px);transition:0.15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.add-module-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+
+/* ── MAIN ── */
+.main{flex:1;padding:28px 32px;overflow-y:auto;max-width:920px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;color:var(--muted)}
+.empty-icon{font-size:56px;margin-bottom:14px}
+.empty-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px}
+.empty-desc{font-size:14px;line-height:1.6}
+
+/* ── MODULE HEADER ── */
+.module-header-card{background:linear-gradient(135deg,var(--primary),#7C3AED);border-radius:16px;padding:22px 24px;color:white;margin-bottom:22px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.mh-left{flex:1}
+.mh-icon{font-size:36px;margin-bottom:8px;line-height:1}
+.mh-icon svg{width:40px;height:40px}
+.mh-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.mh-desc{font-size:14px;opacity:0.8;line-height:1.5}
+.mh-stats{display:flex;gap:16px;margin-top:14px}
+.mh-stat{text-align:center}
+.mh-stat-num{font-size:22px;font-weight:800}
+.mh-stat-label{font-size:11px;opacity:0.7;margin-top:1px}
+.mh-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* ── PROGRESS ── */
+.progress-card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:18px 20px;margin-bottom:20px}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.progress-title{font-size:14px;font-weight:700}
+.progress-pct{font-size:18px;font-weight:800;color:var(--primary)}
+.progress-bar{height:10px;background:var(--bg);border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),#7C3AED);border-radius:5px;transition:width 0.5s ease}
+.progress-sub{font-size:12px;color:var(--muted);margin-top:7px}
+
+/* ── SECTION CARD ── */
+.section-card{background:var(--card);border-radius:14px;border:1px solid var(--border);margin-bottom:20px;overflow:hidden}
+.section-header{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.section-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.section-body{padding:16px 20px}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 16px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;font-family:inherit}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--primary);color:white}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-white{background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3)}
+.btn-white:hover{background:rgba(255,255,255,0.25)}
+.btn-ghost{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--border);color:var(--text)}
+.btn-danger{background:#FEF2F2;color:var(--danger);border:1px solid #FECACA}
+.btn-danger:hover{background:var(--danger);color:white}
+.btn-success{background:#F0FDF4;color:var(--success);border:1px solid #BBF7D0}
+.btn-success:hover{background:var(--success);color:white}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:7px}
+.icon-btn{width:30px;height:30px;border:none;border-radius:7px;cursor:pointer;background:var(--bg);color:var(--muted);font-size:14px;transition:0.15s;display:inline-flex;align-items:center;justify-content:center}
+.icon-btn:hover{background:var(--border);color:var(--text)}
+.icon-btn.danger:hover{background:#FEF2F2;color:var(--danger)}
+
+/* ── MEDIA GRID ── */
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px}
+.media-card{background:var(--bg);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:0.2s;position:relative}
+.media-card:hover{box-shadow:0 6px 20px rgba(0,0,0,0.1);transform:translateY(-2px)}
+.media-thumb{width:100%;aspect-ratio:16/9;background:#1E293B;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.media-thumb img,.media-thumb video{width:100%;height:100%;object-fit:cover;pointer-events:none}
+.play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);transition:0.15s}
+.play-circle{width:46px;height:46px;background:rgba(255,255,255,0.92);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;padding-left:3px}
+.photo-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.2);transition:0.15s}
+.photo-circle{width:46px;height:46px;background:rgba(255,255,255,0.92);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px}
+.media-card:hover .play-overlay,.media-card:hover .photo-overlay{background:rgba(0,0,0,0.08)}
+.media-del-btn{position:absolute;top:6px;right:6px;width:26px;height:26px;background:rgba(220,38,38,0.75);color:white;border:none;border-radius:50%;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;opacity:0.6;transition:opacity 0.15s}
+.media-card:hover .media-del-btn{opacity:1}
+.media-info{padding:10px 12px}
+.media-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-size{font-size:11px;color:var(--muted);margin-top:2px}
+.media-type-badge{position:absolute;top:6px;left:6px;background:rgba(0,0,0,0.6);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+
+/* ── CHECKLIST ── */
+.checklist-item{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}
+.checklist-item:last-child{border-bottom:none}
+.cb-wrap{padding-top:2px;flex-shrink:0}
+.cb-wrap input[type=checkbox]{width:18px;height:18px;accent-color:var(--success);cursor:pointer}
+.checklist-content{flex:1;min-width:0}
+.checklist-text{font-size:14px;line-height:1.5;transition:0.2s}
+.checklist-text.done{text-decoration:line-through;color:var(--muted)}
+.checklist-cat{font-size:11px;color:var(--primary);font-weight:600;background:var(--primary-light);padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+.checklist-actions{display:flex;gap:4px;flex-shrink:0;opacity:0;transition:0.15s}
+.checklist-item:hover .checklist-actions{opacity:1}
+.cat-header{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;padding:10px 0 4px;border-top:1px solid var(--border);margin-top:8px}
+.cat-header:first-child{border-top:none;margin-top:0}
+.checklist-empty{text-align:center;padding:28px;color:var(--muted);font-size:13px}
+
+/* ── UPLOAD AREA ── */
+.upload-area{border:2px dashed var(--border);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:0.15s;margin-top:14px}
+.upload-area:hover{border-color:var(--primary);background:var(--primary-light)}
+.upload-area-icon{font-size:28px;margin-bottom:6px}
+.upload-area-text{font-size:13px;color:var(--muted)}
+.upload-area-text strong{color:var(--primary)}
+.upload-progress{background:var(--primary-light);border-radius:10px;padding:12px 16px;margin-top:12px;display:none}
+.upload-progress.show{display:block}
+.upload-prog-label{font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px}
+.upload-prog-bar{height:6px;background:rgba(37,99,235,0.2);border-radius:3px;overflow:hidden}
+.upload-prog-fill{height:100%;background:var(--primary);border-radius:3px;transition:width 0.2s}
+
+/* ── ICON PICKER ── */
+.icon-picker{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.icon-opt{width:42px;height:42px;border:2px solid var(--border);border-radius:10px;background:var(--bg);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.15s}
+.icon-opt:hover,.icon-opt.selected{border-color:var(--primary);background:var(--primary-light)}
+.icon-opt svg{width:22px;height:22px}
+
+/* ── MODALS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.overlay.hidden{display:none}
+.modal{background:var(--card);border-radius:18px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.25);animation:modalIn 0.2s ease;max-height:90vh;display:flex;flex-direction:column}
+@keyframes modalIn{from{transform:scale(0.94);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-sm{max-width:440px}
+.modal-md{max-width:560px}
+.modal-lg{max-width:780px}
+.modal-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:16px;font-weight:800}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;padding:2px}
+.modal-body{padding:22px;overflow-y:auto}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+
+/* ── FORM ── */
+.form-group{margin-bottom:16px}
+.form-label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px}
+.form-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);transition:0.15s}
+.form-input:focus{outline:none;border-color:var(--primary);background:white;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+textarea.form-input{resize:vertical;min-height:80px}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
+
+/* ── PATIENT SECTION ── */
+.page-layout{display:flex;gap:0;min-height:calc(100vh - 110px)}
+.list-sidebar{width:320px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;height:calc(100vh - 110px);position:sticky;top:110px;overflow:hidden}
+.list-sidebar-header{padding:16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.list-sidebar-scroll{flex:1;overflow-y:auto}
+.detail-area{flex:1;padding:28px 32px;overflow-y:auto}
+.patient-item{padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:0.15s;display:flex;align-items:center;gap:12px}
+.patient-item:hover{background:var(--bg)}
+.patient-item.active{background:var(--primary-light)}
+.patient-avatar{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),#7C3AED);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:15px;font-weight:800;flex-shrink:0}
+.patient-info{flex:1;min-width:0}
+.patient-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.patient-phone{font-size:12px;color:var(--muted);margin-top:1px}
+.patient-item.active .patient-name,.patient-item.active .patient-phone{color:var(--primary)}
+.search-input{width:100%;padding:9px 14px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:inherit;background:var(--bg);color:var(--text)}
+.search-input:focus{outline:none;border-color:var(--primary);background:white}
+.search-wrap{position:relative}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none}
+
+/* ── PATIENT DETAIL ── */
+.patient-header-card{background:linear-gradient(135deg,#0F766E,#0D9488);border-radius:16px;padding:22px 24px;color:white;margin-bottom:22px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.ph-avatar{width:56px;height:56px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0}
+.ph-info{flex:1}
+.ph-name{font-size:22px;font-weight:800;margin-bottom:4px}
+.ph-meta{font-size:13px;opacity:0.8}
+
+/* ── PURCHASE TABLE ── */
+.purchase-table{width:100%;border-collapse:collapse;font-size:13px}
+.purchase-table th{text-align:left;padding:10px 12px;background:var(--bg);font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)}
+.purchase-table td{padding:12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.purchase-table tr:last-child td{border-bottom:none}
+.purchase-table tr:hover td{background:var(--bg)}
+.purchase-actions{display:flex;gap:4px;opacity:0;transition:0.15s}
+.purchase-table tr:hover .purchase-actions{opacity:1}
+
+/* ── SUPPLEMENT ── */
+.supp-table{width:100%;border-collapse:collapse;font-size:13px}
+.supp-table th{text-align:left;padding:10px 14px;background:var(--bg);font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:10}
+.supp-table td{padding:13px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.supp-table tr:hover td{background:var(--bg)}
+.supp-table tr:last-child td{border-bottom:none}
+.discount-badge{background:#FEF3C7;color:#92400E;font-size:11px;font-weight:800;padding:3px 8px;border-radius:8px;display:inline-block}
+.discount-badge.high{background:#FEF2F2;color:var(--danger)}
+.discount-badge.low{background:#F0FDF4;color:var(--success)}
+.sale-badge{background:#FEE2E2;color:var(--danger);font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block}
+.price-orig{color:var(--muted);text-decoration:line-through;font-size:12px;display:block}
+.price-disc{color:var(--danger);font-weight:700}
+.supp-cat-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:10px;display:inline-block}
+.supp-actions{display:flex;gap:4px;opacity:0;transition:0.15s}
+.supp-table tr:hover .supp-actions{opacity:1}
+
+/* ── USER TABLE ── */
+.user-card{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--border);border-radius:12px;background:white;margin-bottom:10px;transition:0.15s}
+.user-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.user-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:white;flex-shrink:0}
+.user-avatar.admin{background:linear-gradient(135deg,#7C3AED,#2563EB)}
+.user-avatar.staff{background:linear-gradient(135deg,#0D9488,#059669)}
+.user-info{flex:1}
+.user-name{font-size:14px;font-weight:700}
+.user-id{font-size:12px;color:var(--muted)}
+.role-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px}
+.role-badge.admin{background:#EDE9FE;color:#6D28D9}
+.role-badge.staff{background:#D1FAE5;color:#065F46}
+.page-container{padding:28px 32px;max-width:820px}
+
+/* ── CONFIRM ── */
+.confirm-icon{font-size:40px;text-align:center;margin-bottom:10px}
+.confirm-msg{font-size:15px;font-weight:700;text-align:center;margin-bottom:6px}
+.confirm-sub{font-size:13px;color:var(--muted);text-align:center}
+
+/* ── VIDEO PLAYER ── */
+.video-player-wrap{background:#000;border-radius:10px;overflow:hidden;margin-bottom:14px}
+.video-player-wrap video{width:100%;max-height:420px;display:block}
+.photo-preview-wrap{background:#1E293B;border-radius:10px;overflow:hidden;margin-bottom:14px;text-align:center}
+.photo-preview-wrap img{max-width:100%;max-height:420px;object-fit:contain;display:block;margin:0 auto}
+</style>
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">💊</div>
+    <div class="login-title">수지정다운약국 시스템</div>
+    <div class="login-sub">계정에 로그인하세요</div>
+    <div class="login-tabs">
+      <div class="login-tab active" onclick="switchAuthTab('login')">로그인</div>
+      <div class="login-tab" onclick="switchAuthTab('register')">회원가입</div>
+    </div>
+    <!-- Login Form -->
+    <div id="loginForm">
+      <div class="login-err" id="loginErr"></div>
+      <div class="form-group">
+        <label class="form-label">아이디</label>
+        <input class="form-input" id="loginId" placeholder="아이디 입력" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input class="form-input" id="loginPw" type="password" placeholder="비밀번호 입력" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;border-radius:11px;justify-content:center" onclick="doLogin()">로그인</button>
+      <div class="login-hint">💡 최초 관리자: <strong>admin</strong> / <strong>admin1234</strong></div>
+    </div>
+    <!-- Register Form -->
+    <div id="registerForm" style="display:none">
+      <div class="login-err" id="regErr"></div>
+      <div class="form-group">
+        <label class="form-label">이름 *</label>
+        <input class="form-input" id="regName" placeholder="홍길동">
+      </div>
+      <div class="form-group">
+        <label class="form-label">아이디 * <span style="font-size:11px;color:var(--muted)">(영문+숫자, 4자 이상)</span></label>
+        <input class="form-input" id="regId" placeholder="my_id123" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호 * <span style="font-size:11px;color:var(--muted)">(8자 이상)</span></label>
+        <input class="form-input" id="regPw" type="password" placeholder="비밀번호" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">비밀번호 확인 *</label>
+        <input class="form-input" id="regPw2" type="password" placeholder="비밀번호 재입력" onkeydown="if(event.key==='Enter')doRegister()">
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;border-radius:11px;justify-content:center" onclick="doRegister()">가입하기</button>
+      <div class="login-hint">📋 가입 후 <strong>일반 직원</strong> 권한이 부여됩니다.<br>관리자 권한은 관리자에게 문의하세요.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app" style="display:none">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">💊</div>
+      <div>
+        <div class="header-title">수지정다운약국 시스템</div>
+        <div class="header-sub">수지정다운약국 직원 교육 관리 시스템</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="user-badge">
+        <span class="role-dot" id="roleDot"></span>
+        <span id="currentUserLabel">-</span>
+      </div>
+      <button class="btn btn-white btn-sm" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchMainTab('training')" id="tbTraining">📋 교육 모듈</button>
+    <button class="tab-btn" onclick="switchMainTab('patient')" id="tbPatient">👥 환자 관리</button>
+    <button class="tab-btn" onclick="switchMainTab('supp')" id="tbSupp">🌿 영양제 관리</button>
+    <button class="tab-btn" id="tbUsers" onclick="switchMainTab('users')" style="display:none">⚙️ 사용자 관리</button>
+  </div>
+
+  <!-- TAB: 교육 모듈 -->
+  <div class="tab-content active" id="tabTraining">
+    <div class="layout">
+      <div class="sidebar">
+        <div class="sidebar-top"><div class="sidebar-label">교육 모듈</div></div>
+        <div class="module-list" id="moduleList"></div>
+        <button class="add-module-btn" onclick="openModuleModal()" id="addModuleBtn">＋ 새 교육 모듈 추가</button>
+      </div>
+      <div class="main" id="mainContent">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">교육 모듈을 선택하세요</div>
+          <div class="empty-desc">왼쪽에서 모듈을 선택하거나 새 모듈을 추가해 시작하세요.</div>
+          <br>
+          <button class="btn btn-primary" onclick="openModuleModal()">＋ 첫 번째 모듈 만들기</button>
+        </div>
+        <div id="moduleDetail" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 환자 관리 -->
+  <div class="tab-content" id="tabPatient">
+    <div class="page-layout">
+      <div class="list-sidebar">
+        <div class="list-sidebar-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:14px;font-weight:800">단골 환자</div>
+            <button class="btn btn-primary btn-sm" onclick="openPatientModal()">＋ 추가</button>
+          </div>
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="patientSearch" placeholder="이름, 연락처 검색..." oninput="renderPatientList()">
+          </div>
+        </div>
+        <div class="list-sidebar-scroll" id="patientList"></div>
+      </div>
+      <div class="detail-area" id="patientDetail">
+        <div class="empty-state">
+          <div class="empty-icon">👥</div>
+          <div class="empty-title">환자를 선택하세요</div>
+          <div class="empty-desc">왼쪽에서 환자를 선택하거나 추가하세요.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 영양제 관리 -->
+  <div class="tab-content" id="tabSupp">
+    <div class="page-container" style="max-width:100%">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:20px;font-weight:900">🌿 영양제 관리</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">할인 품목 및 재고 관리</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select class="form-input" style="width:auto;padding:8px 12px;font-size:13px" id="suppCatFilter" onchange="renderSuppList()">
+            <option value="">전체 카테고리</option>
+            <option>비타민</option><option>오메가3</option><option>유산균</option>
+            <option>미네랄</option><option>콜라겐</option><option>한방/홍삼</option><option>기타</option>
+          </select>
+          <select class="form-input" style="width:auto;padding:8px 12px;font-size:13px" id="suppSaleFilter" onchange="renderSuppList()">
+            <option value="">전체</option>
+            <option value="sale">할인 중</option>
+            <option value="normal">정상가</option>
+          </select>
+          <button class="btn btn-primary" onclick="openSuppModal()">＋ 제품 추가</button>
+        </div>
+      </div>
+      <div class="section-card" style="overflow:auto">
+        <table class="supp-table" id="suppTable">
+          <thead>
+            <tr>
+              <th>제품명</th><th>카테고리</th><th>정가</th><th>할인가</th><th>할인율</th><th>상태</th><th>비고</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="suppBody"></tbody>
+        </table>
+      </div>
+      <div id="suppEmpty" style="text-align:center;padding:48px;color:var(--muted);display:none">
+        <div style="font-size:40px;margin-bottom:12px">🌿</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">등록된 제품이 없어요</div>
+        <div style="font-size:13px;margin-top:6px">위 버튼으로 영양제를 추가해보세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: 사용자 관리 (admin only) -->
+  <div class="tab-content" id="tabUsers">
+    <div class="page-container">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div style="font-size:20px;font-weight:900">⚙️ 사용자 관리</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:3px">직원 계정 추가 및 권한 관리</div>
+        </div>
+        <button class="btn btn-primary" onclick="openUserModal()">＋ 직원 추가</button>
+      </div>
+      <div id="userList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- 모듈 추가/편집 -->
+<div class="overlay hidden" id="moduleModalOverlay">
+  <div class="modal modal-md">
+    <div class="modal-header"><div class="modal-title" id="moduleModalTitle">새 교육 모듈</div><button class="modal-close" onclick="closeModuleModal()">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">아이콘 선택</label>
+        <div class="icon-picker" id="iconPicker">
+          <div class="icon-opt selected" data-icon="📋" onclick="selectIcon(this)">📋</div>
+          <div class="icon-opt" data-icon="💊" onclick="selectIcon(this)">💊</div>
+          <div class="icon-opt" data-icon="🏥" onclick="selectIcon(this)">🏥</div>
+          <div class="icon-opt" data-icon="💉" onclick="selectIcon(this)">💉</div>
+          <div class="icon-opt" data-icon="🩺" onclick="selectIcon(this)">🩺</div>
+          <div class="icon-opt" data-icon="💻" onclick="selectIcon(this)">💻</div>
+          <div class="icon-opt" data-icon="📞" onclick="selectIcon(this)">📞</div>
+          <div class="icon-opt" data-icon="🧾" onclick="selectIcon(this)">🧾</div>
+          <div class="icon-opt" data-icon="📦" onclick="selectIcon(this)">📦</div>
+          <div class="icon-opt" data-icon="🔬" onclick="selectIcon(this)">🔬</div>
+          <div class="icon-opt" data-icon="🤝" onclick="selectIcon(this)">🤝</div>
+          <div class="icon-opt" data-icon="⚕️" onclick="selectIcon(this)">⚕️</div>
+          <div class="icon-opt" data-icon="__atc__" onclick="selectIcon(this)" title="자동 조제기 (ATC)">${ATC_SVG_OPT}</div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">모듈 이름 *</label><input class="form-input" id="moduleNameInput" placeholder="예: 고객 응대, POS 시스템 사용법..." maxlength="40"></div>
+      <div class="form-group"><label class="form-label">설명 (선택)</label><textarea class="form-input" id="moduleDescInput" placeholder="이 교육 모듈에 대한 설명..." rows="3"></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModuleModal()">취소</button><button class="btn btn-primary" onclick="saveModule()">저장</button></div>
+  </div>
+</div>
+
+<!-- 체크리스트 항목 -->
+<div class="overlay hidden" id="itemModalOverlay">
+  <div class="modal modal-sm">
+    <div class="modal-header"><div class="modal-title" id="itemModalTitle">항목 추가</div><button class="modal-close" onclick="closeItemModal()">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">숙달 항목 내용 *</label><textarea class="form-input" id="itemTextInput" placeholder="예: 처방전 접수 절차 숙지 및 실습 완료" rows="3"></textarea></div>
+      <div class="form-group"><label class="form-label">카테고리 (선택)</label><input class="form-input" id="itemCatInput" placeholder="예: 기본 업무, 고객 서비스..."></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeItemModal()">취소</button><button class="btn btn-primary" onclick="saveItem()">저장</button></div>
+  </div>
+</div>
+
+<!-- 미디어 재생 -->
+<div class="overlay hidden" id="mediaModalOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-header"><div class="modal-title" id="mediaModalTitle">미디어 보기</div><button class="modal-close" onclick="closeMediaModal()">×</button></div>
+    <div class="modal-body">
+      <div id="mediaPlayerArea"></div>
+      <div style="font-size:13px;color:var(--muted)" id="mediaModalInfo"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 환자 추가/편집 -->
+<div class="overlay hidden" id="patientModalOverlay">
+  <div class="modal modal-md">
+    <div class="modal-header"><div class="modal-title" id="patientModalTitle">환자 추가</div><button class="modal-close" onclick="closePatientModal()">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">이름 *</label><input class="form-input" id="patientName" placeholder="홍길동"></div>
+        <div class="form-group"><label class="form-label">연락처</label><input class="form-input" id="patientPhone" placeholder="010-0000-0000"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">생년월일</label><input class="form-input" id="patientDob" type="date"></div>
+        <div class="form-group"><label class="form-label">성별</label>
+          <select class="form-input" id="patientGender"><option value="">선택 안 함</option><option>남성</option><option>여성</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">알레르기 / 주의사항</label><input class="form-input" id="patientAllergy" placeholder="예: 페니실린 알레르기, 고혈압 약 복용 중..."></div>
+      <div class="form-group"><label class="form-label">메모</label><textarea class="form-input" id="patientMemo" rows="2" placeholder="기타 메모..."></textarea></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closePatientModal()">취소</button><button class="btn btn-primary" onclick="savePatient()">저장</button></div>
+  </div>
+</div>
+
+<!-- 구매 내역 추가/편집 -->
+<div class="overlay hidden" id="purchaseModalOverlay">
+  <div class="modal modal-md">
+    <div class="modal-header"><div class="modal-title" id="purchaseModalTitle">구매 내역 추가</div><button class="modal-close" onclick="closePurchaseModal()">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">날짜 *</label><input class="form-input" id="purchaseDate" type="date"></div>
+        <div class="form-group"><label class="form-label">수량</label><input class="form-input" id="purchaseQty" type="number" min="1" placeholder="1"></div>
+      </div>
+      <div class="form-group"><label class="form-label">제품명 *</label><input class="form-input" id="purchaseProduct" placeholder="예: 타이레놀 500mg, 비타민C 1000mg..."></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">정가 (원)</label><input class="form-input" id="purchaseOrigPrice" type="number" min="0" placeholder="0" oninput="calcPurchaseDiscount()"></div>
+        <div class="form-group"><label class="form-label">실제 판매가 (원)</label><input class="form-input" id="purchaseAmount" type="number" min="0" placeholder="0" oninput="calcPurchaseDiscount()"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">할인액 (원)</label><input class="form-input" id="purchaseDiscAmt" readonly placeholder="자동계산" style="background:var(--bg)"></div>
+        <div class="form-group"><label class="form-label">할인율</label><input class="form-input" id="purchaseDiscRate" readonly placeholder="자동계산" style="background:var(--bg)"></div>
+      </div>
+      <div class="form-group"><label class="form-label">담당자</label><input class="form-input" id="purchaseStaff" placeholder="담당 직원 이름"></div>
+      <div class="form-group"><label class="form-label">메모</label><input class="form-input" id="purchaseMemo" placeholder="처방전 번호, 특이사항..."></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closePurchaseModal()">취소</button><button class="btn btn-primary" onclick="savePurchase()">저장</button></div>
+  </div>
+</div>
+
+<!-- 영양제 추가/편집 -->
+<div class="overlay hidden" id="suppModalOverlay">
+  <div class="modal modal-md">
+    <div class="modal-header"><div class="modal-title" id="suppModalTitle">제품 추가</div><button class="modal-close" onclick="closeSuppModal()">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group" style="flex:2"><label class="form-label">제품명 *</label><input class="form-input" id="suppName" placeholder="예: 오메가-3 1000mg"></div>
+        <div class="form-group"><label class="form-label">카테고리</label>
+          <select class="form-input" id="suppCat">
+            <option>비타민</option><option>오메가3</option><option>유산균</option>
+            <option>미네랄</option><option>콜라겐</option><option>한방/홍삼</option><option>기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">브랜드</label><input class="form-input" id="suppBrand" placeholder="예: 종근당, GNM자연의품격..."></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">정가 (원) *</label><input class="form-input" id="suppPrice" type="number" min="0" placeholder="0" oninput="calcDiscount()"></div>
+        <div class="form-group"><label class="form-label">할인가 (원)</label><input class="form-input" id="suppDiscPrice" type="number" min="0" placeholder="미입력 시 할인 없음" oninput="calcDiscount()"></div>
+        <div class="form-group" style="flex:0.6"><label class="form-label">할인율</label><input class="form-input" id="suppDiscRate" readonly placeholder="자동계산" style="background:var(--bg)"></div>
+      </div>
+
+      <div class="form-group"><label class="form-label">비고</label><input class="form-input" id="suppNote" placeholder="재고 현황, 특이사항..."></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeSuppModal()">취소</button><button class="btn btn-primary" onclick="saveSupp()">저장</button></div>
+  </div>
+</div>
+
+<!-- 사용자 추가/편집 -->
+<div class="overlay hidden" id="userModalOverlay">
+  <div class="modal modal-sm">
+    <div class="modal-header"><div class="modal-title" id="userModalTitle">직원 추가</div><button class="modal-close" onclick="closeUserModal()">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">이름 *</label><input class="form-input" id="userFullName" placeholder="홍길동"></div>
+      <div class="form-group"><label class="form-label">아이디 *</label><input class="form-input" id="userUsername" placeholder="영문+숫자, 4자 이상"></div>
+      <div class="form-group"><label class="form-label">비밀번호 *</label><input class="form-input" id="userPassword" type="password" placeholder="8자 이상"></div>
+      <div class="form-group"><label class="form-label">역할</label>
+        <select class="form-input" id="userRole">
+          <option value="staff">일반 직원 (Staff)</option>
+          <option value="admin">관리자 (Admin)</option>
+        </select>
+      </div>
+      <div id="userModalErr" class="login-err"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeUserModal()">취소</button><button class="btn btn-primary" onclick="saveUser()">저장</button></div>
+  </div>
+</div>
+
+<!-- 확인 다이얼로그 -->
+<div class="overlay hidden" id="confirmOverlay">
+  <div class="modal modal-sm">
+    <div class="modal-body" style="padding:28px 22px">
+      <div class="confirm-icon" id="confirmIcon">⚠️</div>
+      <div class="confirm-msg" id="confirmMsg"></div>
+      <div class="confirm-sub" id="confirmSub"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeConfirm()">취소</button><button class="btn btn-danger" id="confirmOkBtn">삭제</button></div>
+  </div>
+</div>
+
+<!-- File inputs -->
+
+<!-- ══ MEDIA UPLOAD MODAL ══ -->
+<div class="overlay hidden" id="mediaUploadOverlay">
+  <div class="modal modal-md">
+    <div class="modal-header">
+      <div class="modal-title">📁 교육 자료 추가</div>
+      <button class="modal-close" onclick="closeMediaUploadModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="login-tabs" style="margin-bottom:18px">
+        <div class="login-tab active" id="ytTab" onclick="switchMediaTab('youtube')">📺 YouTube 링크</div>
+        <div class="login-tab" id="photoTab" onclick="switchMediaTab('photo')">📷 사진 업로드</div>
+      </div>
+      <div id="ytTabContent">
+        <div class="form-group">
+          <label class="form-label">YouTube URL</label>
+          <input class="form-input" id="ytUrlInput" placeholder="https://www.youtube.com/watch?v=..." oninput="previewYoutube()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">영상 제목</label>
+          <input class="form-input" id="ytNameInput" placeholder="영상 제목 입력">
+        </div>
+        <div id="ytPreview" style="display:none;margin:10px 0">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">미리보기:</div>
+          <div style="border-radius:8px;overflow:hidden;aspect-ratio:16/9">
+            <iframe id="ytIframe" width="100%" height="100%" frameborder="0" allowfullscreen style="display:block"></iframe>
+          </div>
+        </div>
+        <div id="ytErr" style="display:none;color:var(--danger);font-size:13px;margin-bottom:8px"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:8px;justify-content:center" onclick="saveYoutube()">💾 저장</button>
+      </div>
+      <div id="photoTabContent" style="display:none">
+        <div class="upload-area" onclick="document.getElementById('photoFileInput').click()" id="photoDropArea">
+          <div class="upload-area-icon">📷</div>
+          <div class="upload-area-text"><strong>클릭하여 사진 선택</strong><br>JPG, PNG, GIF 지원</div>
+        </div>
+        <input type="file" id="photoFileInput" accept="image/*" style="display:none" onchange="handlePhotoSelect(this)">
+        <div id="photoPreviewWrap" style="display:none;margin-top:12px">
+          <img id="photoPreviewImg" style="max-width:100%;border-radius:8px;max-height:200px;object-fit:contain;display:block;margin:0 auto">
+          <div class="form-group" style="margin-top:10px">
+            <label class="form-label">사진 제목</label>
+            <input class="form-input" id="photoNameInput" placeholder="사진 제목">
+          </div>
+          <div id="photoSizeInfo" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="savePhoto()">💾 저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Photo file input (hidden) -->
+<input type="file" id="photoFileInput2" accept="image/*" style="display:none">
+
+
+<script>
+// ══ FIREBASE INIT ══
+const firebaseConfig = {
+  apiKey: "AIzaSyDGVKzV19R-nW_CvTdzm9ZJup67wbQjYiA",
+  authDomain: "jdw-pharmacy.firebaseapp.com",
+  projectId: "jdw-pharmacy",
+  storageBucket: "jdw-pharmacy.firebasestorage.app",
+  messagingSenderId: "324853389845",
+  appId: "1:324853389845:web:b7860c0dec04c2e9438c1c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const fdb = firebase.firestore();
+fdb.enablePersistence().catch(e => console.log('Offline persistence:', e.code));
+
+// ══ ATC SVG ══
+const ATC_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<rect x="12" y="4" width="76" height="92" rx="6" fill="#2563EB"/>
+<rect x="18" y="10" width="64" height="36" rx="3" fill="#1E3A8A"/>
+<rect x="24" y="15" width="52" height="3" rx="1.5" fill="#93C5FD"/>
+<rect x="24" y="22" width="38" height="3" rx="1.5" fill="#93C5FD"/>
+<rect x="24" y="29" width="46" height="3" rx="1.5" fill="#60A5FA"/>
+<text x="50" y="38" text-anchor="middle" fill="#BFDBFE" font-size="7" font-family="monospace" font-weight="bold">ATC</text>
+<rect x="18" y="52" width="28" height="26" rx="3" fill="#1E3A8A"/>
+<circle cx="27" cy="61" r="3" fill="#60A5FA"/>
+<circle cx="37" cy="61" r="3" fill="#60A5FA"/>
+<circle cx="27" cy="71" r="3" fill="#60A5FA"/>
+<circle cx="37" cy="71" r="3" fill="#60A5FA"/>
+<rect x="50" y="52" width="32" height="26" rx="3" fill="#1E3A8A"/>
+<ellipse cx="60" cy="62" rx="4" ry="3" fill="#FCD34D"/>
+<ellipse cx="73" cy="62" rx="4" ry="3" fill="#F87171"/>
+<ellipse cx="60" cy="71" rx="4" ry="3" fill="#86EFAC"/>
+<ellipse cx="73" cy="71" rx="4" ry="3" fill="#FCD34D"/>
+<rect x="18" y="82" width="64" height="10" rx="3" fill="#1E3A8A"/>
+<rect x="22" y="84" width="56" height="6" rx="2" fill="#374151"/>
+</svg>`;
+
+document.getElementById('iconPicker').innerHTML =
+  document.getElementById('iconPicker').innerHTML.replace('${ATC_SVG_OPT}', ATC_SVG);
+
+// ══ STATE ══
+let currentUser = null;
+let modules = [];
+let patients = [];
+let supps = [];
+let currentModuleId = null;
+let editingModuleId = null;
+let editingItemId = null;
+let editingPatientId = null;
+let currentPatientId = null;
+let purchasePatientId = null;
+let editingPurchaseId = null;
+let editingSuppId = null;
+let editingUserId = null;
+let currentUploadModuleId = null;
+let selectedIcon = '📋';
+let confirmCallback = null;
+let selectedPhotoBase64 = null;
+let selectedPhotoThumb = null;
+
+// Firestore listeners (unsubscribe functions)
+let unsubModules = null;
+let unsubPatients = null;
+let unsubSupps = null;
+
+// ══ UTILS ══
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){if(!s)return'';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function formatSize(b){if(!b)return'';return b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'}
+function renderIcon(icon,size=22){
+  if(icon==='__atc__') return `<span style="display:inline-flex;align-items:center;width:${size}px;height:${size}px">${ATC_SVG}</span>`;
+  return icon||'📋';
+}
+function showLoading(msg){
+  let el=document.getElementById('loadingToast');
+  if(!el){el=document.createElement('div');el.id='loadingToast';el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1E293B;color:white;padding:10px 20px;border-radius:20px;font-size:14px;z-index:9999;display:flex;align-items:center;gap:8px';document.body.appendChild(el);}
+  el.innerHTML='<span style="animation:spin 1s linear infinite;display:inline-block">⏳</span> '+msg;
+  el.style.display='flex';
+}
+function hideLoading(){const el=document.getElementById('loadingToast');if(el)el.style.display='none';}
+
+// ══ AUTH ══
+function switchAuthTab(t){
+  document.querySelectorAll('.login-tab').forEach((el,i)=>el.classList.toggle('active',i===(t==='login'?0:1)));
+  document.getElementById('loginForm').style.display=t==='login'?'':'none';
+  document.getElementById('registerForm').style.display=t==='register'?'':'none';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('regErr').style.display='none';
+}
+
+function doLogin(){
+  const username=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  const err=document.getElementById('loginErr');
+  err.style.display='none';
+  if(!username||!pw){err.textContent='아이디와 비밀번호를 입력하세요.';err.style.display='block';return;}
+  const email=username+'@jdwpharm.app';
+  showLoading('로그인 중...');
+  auth.signInWithEmailAndPassword(email,pw).catch(e=>{
+    hideLoading();
+    err.textContent='아이디 또는 비밀번호가 올바르지 않습니다.';
+    err.style.display='block';
+  });
+}
+
+async function doRegister(){
+  const name=document.getElementById('regName').value.trim();
+  const username=document.getElementById('regId').value.trim();
+  const pw=document.getElementById('regPw').value;
+  const pw2=document.getElementById('regPw2').value;
+  const errEl=document.getElementById('regErr');
+  const showErr=msg=>{errEl.textContent=msg;errEl.style.display='block';};
+  errEl.style.display='none';
+  if(!name){showErr('이름을 입력하세요.');document.getElementById('regName').focus();return;}
+  if(!username||username.length<4){showErr('아이디는 4자 이상이어야 합니다.');document.getElementById('regId').focus();return;}
+  if(!/^[a-zA-Z0-9_]+$/.test(username)){showErr('아이디는 영문, 숫자, 밑줄(_)만 사용 가능합니다.');document.getElementById('regId').focus();return;}
+  if(!pw||pw.length<8){showErr('비밀번호는 8자 이상이어야 합니다.');document.getElementById('regPw').focus();return;}
+  if(pw!==pw2){showErr('비밀번호가 일치하지 않습니다.');document.getElementById('regPw2').focus();return;}
+  const email=username+'@jdwpharm.app';
+  showLoading('가입 처리 중...');
+  try{
+    // Check username uniqueness
+    const existing=await fdb.collection('users').where('username','==',username).limit(1).get();
+    if(!existing.empty){hideLoading();showErr('이미 사용 중인 아이디입니다.');return;}
+    const cred=await auth.createUserWithEmailAndPassword(email,pw);
+    const uid2=cred.user.uid;
+    // First user = admin
+    const allUsers=await fdb.collection('users').limit(1).get();
+    const role=allUsers.empty?'admin':'staff';
+    await fdb.collection('users').doc(uid2).set({uid:uid2,name,username,role,createdAt:Date.now()});
+    ['regName','regId','regPw','regPw2'].forEach(id=>document.getElementById(id).value='');
+  }catch(e){
+    hideLoading();
+    if(e.code==='auth/email-already-in-use')showErr('이미 사용 중인 아이디입니다.');
+    else showErr('가입 중 오류가 발생했습니다: '+e.message);
+  }
+}
+
+function doLogout(){
+  if(unsubModules)unsubModules();
+  if(unsubPatients)unsubPatients();
+  if(unsubSupps)unsubSupps();
+  unsubModules=unsubPatients=unsubSupps=null;
+  auth.signOut();
+}
+
+// ══ AUTH STATE ══
+auth.onAuthStateChanged(async user=>{
+  hideLoading();
+  if(user){
+    try{
+      const doc=await fdb.collection('users').doc(user.uid).get();
+      if(doc.exists){
+        currentUser={uid:user.uid,...doc.data()};
+        startApp();
+      } else {
+        auth.signOut();
+      }
+    }catch(e){
+      console.error('User load error:',e);
+      document.getElementById('loginScreen').style.display='flex';
+    }
+  }else{
+    currentUser=null;
+    modules=[];patients=[];supps=[];
+    document.getElementById('app').style.display='none';
+    document.getElementById('loginScreen').style.display='flex';
+    document.getElementById('loginId').value='';
+    document.getElementById('loginPw').value='';
+  }
+});
+
+// ══ START APP ══
+function startApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('currentUserLabel').textContent=`${currentUser.name} (${currentUser.role==='admin'?'관리자':'직원'})`;
+  document.getElementById('roleDot').className='role-dot'+(currentUser.role==='staff'?' staff':'');
+  if(currentUser.role==='admin'){document.getElementById('tbUsers').style.display='';}
+  else{document.getElementById('tbUsers').style.display='none';}
+  if(currentUser.role==='staff'){document.getElementById('addModuleBtn').style.display='none';}
+  else{document.getElementById('addModuleBtn').style.display='';}
+  setupListeners();
+}
+
+// ══ FIRESTORE LISTENERS ══
+function setupListeners(){
+  // Modules
+  unsubModules=fdb.collection('modules').orderBy('createdAt').onSnapshot(snap=>{
+    modules=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderSidebar();
+    if(currentModuleId&&modules.find(m=>m.id===currentModuleId)){
+      renderModuleDetail(currentModuleId);
+    }else if(modules.length&&!currentModuleId){
+      currentModuleId=modules[0].id;
+      renderSidebar();
+      renderModuleDetail(currentModuleId);
+    }else if(!modules.length){
+      document.getElementById('emptyState').style.display='';
+      document.getElementById('moduleDetail').style.display='none';
+    }
+  },e=>console.error('modules listener error:',e));
+
+  // Patients
+  unsubPatients=fdb.collection('patients').orderBy('createdAt').onSnapshot(snap=>{
+    patients=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderPatientList();
+    if(currentPatientId&&patients.find(p=>p.id===currentPatientId))renderPatientDetail(currentPatientId);
+  },e=>console.error('patients listener error:',e));
+
+  // Supplements
+  unsubSupps=fdb.collection('supplements').orderBy('createdAt').onSnapshot(snap=>{
+    supps=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderSuppList();
+  },e=>console.error('supps listener error:',e));
+
+  // Users (admin only)
+  if(currentUser.role==='admin') renderUserList();
+}
+
+// ══ ICON RENDER ══
+// ══ TABS ══
+function switchMainTab(tab){
+  ['Training','Patient','Supp','Users'].forEach(t=>{
+    document.getElementById('tab'+t).classList.toggle('active',t.toLowerCase()===tab);
+    document.getElementById('tb'+t)&&document.getElementById('tb'+t).classList.toggle('active',t.toLowerCase()===tab);
+  });
+}
+
+// ══ SIDEBAR ══
+function renderSidebar(){
+  const list=document.getElementById('moduleList');
+  if(!modules.length){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">모듈이 없어요.</div>';return;}
+  list.innerHTML=modules.map(m=>{
+    const total=(m.items||[]).length,done=(m.items||[]).filter(i=>i.checked).length;
+    const pct=total?Math.round(done/total*100):0;
+    return `<div class="module-item ${m.id===currentModuleId?'active':''}" onclick="selectModule('${m.id}')">
+      <div class="module-icon">${renderIcon(m.icon)}</div>
+      <div class="module-info"><div class="module-name">${esc(m.name)}</div><div class="module-meta">${total}개 항목</div></div>
+      <div class="module-pct">${pct}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ══ MODULE DETAIL ══
+async function renderModuleDetail(moduleId){
+  const m=modules.find(x=>x.id===moduleId);
+  if(!m) return;
+  const total=(m.items||[]).length,done=(m.items||[]).filter(i=>i.checked).length;
+  const pct=total?Math.round(done/total*100):0;
+  let media=[];
+  try{
+    const snap=await fdb.collection('modules').doc(moduleId).collection('media').orderBy('createdAt').get();
+    media=snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){console.error('media load error:',e);}
+
+  const cats={};
+  (m.items||[]).forEach(it=>{const cat=it.category||'일반';if(!cats[cat])cats[cat]=[];cats[cat].push(it);});
+
+  const checkHtml=total===0
+    ?`<div class="checklist-empty">📝 항목이 없어요. 아래에서 추가해보세요.</div>`
+    :Object.entries(cats).map(([cat,items])=>`
+      <div class="cat-header">${esc(cat)}</div>
+      ${items.map(it=>`<div class="checklist-item">
+        <div class="cb-wrap"><input type="checkbox" ${it.checked?'checked':''} onchange="toggleItem('${moduleId}','${it.id}',this.checked)"></div>
+        <div class="checklist-content"><div class="checklist-text ${it.checked?'done':''}" id="itxt-${it.id}">${esc(it.text)}</div></div>
+        <div class="checklist-actions">
+          ${currentUser.role==='admin'?`<button class="icon-btn" onclick="openItemModal('${moduleId}','${it.id}')">✏️</button><button class="icon-btn danger" onclick="deleteItem('${moduleId}','${it.id}')">🗑</button>`:''}
+        </div>
+      </div>`).join('')}`).join('');
+
+  const mediaHtml=media.length===0
+    ?`<div style="text-align:center;padding:28px;color:var(--muted);font-size:13px">🎬 업로드된 미디어가 없어요.</div>`
+    :`<div class="media-grid">${media.map(v=>{
+      const isYT=v.type==='youtube';
+      const thumb=isYT?`https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`:(v.thumb||'');
+      return `<div class="media-card" onclick="${isYT?`playVideo('${v.videoId}','${esc(v.name)}')`:`viewPhoto('${esc(v.base64||'')}','${esc(v.name)}')`}">
+        <div class="media-thumb">
+          <div class="media-type-badge">${isYT?'📺 YouTube':'📷 사진'}</div>
+          ${thumb?`<img src="${thumb}" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover">`:''}
+          <div class="${isYT?'play-overlay':'photo-overlay'}"><div class="${isYT?'play-circle':'photo-circle'}">${isYT?'▶':'🔍'}</div></div>
+        </div>
+        <button class="media-del-btn" onclick="event.stopPropagation();deleteMedia('${moduleId}','${v.id}')">✕</button>
+        <div class="media-info"><div class="media-name">${esc(v.name)}</div><div class="media-size">${isYT?'YouTube':((v.sizeKB||0)+' KB')}</div></div>
+      </div>`;
+    }).join('')}</div>`;
+
+  const canEdit=currentUser.role==='admin';
+  document.getElementById('moduleDetail').innerHTML=`
+    <div class="module-header-card">
+      <div class="mh-left">
+        <div class="mh-icon">${renderIcon(m.icon,40)}</div>
+        <div class="mh-title">${esc(m.name)}</div>
+        <div class="mh-desc">${esc(m.description||'설명 없음')}</div>
+        <div class="mh-stats">
+          <div class="mh-stat"><div class="mh-stat-num">${total}</div><div class="mh-stat-label">숙달 항목</div></div>
+          <div class="mh-stat"><div class="mh-stat-num">${done}</div><div class="mh-stat-label">완료</div></div>
+          <div class="mh-stat"><div class="mh-stat-num">${media.length}</div><div class="mh-stat-label">미디어</div></div>
+        </div>
+      </div>
+      <div class="mh-actions">
+        ${canEdit?`<button class="btn btn-white btn-sm" onclick="openModuleModal('${m.id}')">✏️ 편집</button><button class="btn btn-white btn-sm" onclick="deleteModule('${m.id}')">🗑</button>`:''}
+      </div>
+    </div>
+    <div class="progress-card">
+      <div class="progress-header"><div class="progress-title">📊 숙달 진도</div><div class="progress-pct" id="progPct">${pct}%</div></div>
+      <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:${pct}%"></div></div>
+      <div class="progress-sub" id="progSub">${done}/${total}개 완료${pct===100&&total>0?' 🎉':''}</div>
+    </div>
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">📁 교육 자료 (YouTube · 사진)</div>
+        <button class="btn btn-primary btn-sm" onclick="openMediaUpload('${moduleId}')">＋ 자료 추가</button>
+      </div>
+      <div class="section-body">
+        ${mediaHtml}
+      </div>
+    </div>
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">✅ 숙달 체크리스트</div>
+        <div style="display:flex;gap:6px">
+          ${done>0&&canEdit?`<button class="btn btn-ghost btn-sm" onclick="resetChecks('${moduleId}')">↺ 초기화</button>`:''}
+          ${canEdit?`<button class="btn btn-primary btn-sm" onclick="openItemModal('${moduleId}')">＋ 항목 추가</button>`:''}
+        </div>
+      </div>
+      <div class="section-body">${checkHtml}</div>
+    </div>`;
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('moduleDetail').style.display='block';
+}
+
+function selectModule(id){currentModuleId=id;renderSidebar();renderModuleDetail(id);}
+
+// ══ MODULE CRUD ══
+function openModuleModal(moduleId){
+  if(currentUser.role!=='admin') return;
+  editingModuleId=moduleId||null;
+  selectedIcon='📋';
+  const m=moduleId?modules.find(x=>x.id===moduleId):null;
+  document.getElementById('moduleModalTitle').textContent=m?'모듈 편집':'새 교육 모듈';
+  document.getElementById('moduleNameInput').value=m?m.name:'';
+  document.getElementById('moduleDescInput').value=m?(m.description||''):'';
+  if(m) selectedIcon=m.icon;
+  document.querySelectorAll('.icon-opt').forEach(el=>el.classList.toggle('selected',el.dataset.icon===selectedIcon));
+  document.getElementById('moduleModalOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('moduleNameInput').focus(),100);
+}
+function closeModuleModal(){document.getElementById('moduleModalOverlay').classList.add('hidden')}
+
+async function saveModule(){
+  const name=document.getElementById('moduleNameInput').value.trim();
+  if(!name){document.getElementById('moduleNameInput').focus();return;}
+  const desc=document.getElementById('moduleDescInput').value.trim();
+  showLoading('저장 중...');
+  try{
+    if(editingModuleId){
+      await fdb.collection('modules').doc(editingModuleId).update({name,description:desc,icon:selectedIcon});
+    }else{
+      const ref=await fdb.collection('modules').add({name,description:desc,icon:selectedIcon,items:[],createdAt:Date.now(),createdBy:currentUser.uid});
+      currentModuleId=ref.id;
+    }
+  }finally{hideLoading();}
+  closeModuleModal();
+}
+
+async function deleteModule(moduleId){
+  const m=modules.find(x=>x.id===moduleId);
+  openConfirm('🗑',`"${m.name}" 삭제`,'모듈과 모든 미디어가 삭제됩니다.',async()=>{
+    showLoading('삭제 중...');
+    try{
+      const mediaSnap=await fdb.collection('modules').doc(moduleId).collection('media').get();
+      const batch=fdb.batch();
+      mediaSnap.docs.forEach(d=>batch.delete(d.ref));
+      batch.delete(fdb.collection('modules').doc(moduleId));
+      await batch.commit();
+      currentModuleId=null;
+      document.getElementById('emptyState').style.display='';
+      document.getElementById('moduleDetail').style.display='none';
+    }finally{hideLoading();}
+  });
+}
+
+function selectIcon(el){selectedIcon=el.dataset.icon;document.querySelectorAll('.icon-opt').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');}
+
+// ══ CHECKLIST ══
+function openItemModal(moduleId,itemId){
+  if(currentUser.role!=='admin') return;
+  editingItemId=itemId||null;currentModuleId=moduleId;
+  const m=modules.find(x=>x.id===moduleId);
+  const it=itemId?(m.items||[]).find(i=>i.id===itemId):null;
+  document.getElementById('itemModalTitle').textContent=it?'항목 편집':'항목 추가';
+  document.getElementById('itemTextInput').value=it?it.text:'';
+  document.getElementById('itemCatInput').value=it?(it.category||''):'';
+  document.getElementById('itemModalOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('itemTextInput').focus(),100);
+}
+function closeItemModal(){document.getElementById('itemModalOverlay').classList.add('hidden')}
+
+async function saveItem(){
+  const text=document.getElementById('itemTextInput').value.trim();
+  if(!text){document.getElementById('itemTextInput').focus();return;}
+  const cat=document.getElementById('itemCatInput').value.trim();
+  const m=modules.find(x=>x.id===currentModuleId);
+  let items=[...(m.items||[])];
+  if(editingItemId){
+    items=items.map(it=>it.id===editingItemId?{...it,text,category:cat}:it);
+  }else{
+    items.push({id:uid(),text,category:cat,checked:false,createdAt:Date.now()});
+  }
+  showLoading('저장 중...');
+  try{await fdb.collection('modules').doc(currentModuleId).update({items});}
+  finally{hideLoading();}
+  closeItemModal();
+}
+
+async function toggleItem(moduleId,itemId,checked){
+  const m=modules.find(x=>x.id===moduleId);
+  // Optimistic UI update
+  const it=m.items.find(i=>i.id===itemId);if(it)it.checked=checked;
+  renderSidebar();
+  const total=(m.items||[]).length,done=(m.items||[]).filter(i=>i.checked).length;
+  const pct=total?Math.round(done/total*100):0;
+  const pf=document.getElementById('progFill'),pp=document.getElementById('progPct'),ps=document.getElementById('progSub');
+  if(pf)pf.style.width=pct+'%';if(pp)pp.textContent=pct+'%';
+  if(ps)ps.textContent=`${done}/${total}개 완료${pct===100&&total>0?' 🎉':''}`;
+  const el=document.getElementById('itxt-'+itemId);if(el)el.className='checklist-text'+(checked?' done':'');
+  // Persist
+  const items=m.items.map(i=>({id:i.id,text:i.text,category:i.category||'',checked:i.checked,createdAt:i.createdAt||0}));
+  await fdb.collection('modules').doc(moduleId).update({items});
+}
+
+async function deleteItem(moduleId,itemId){
+  const m=modules.find(x=>x.id===moduleId);
+  const it=(m.items||[]).find(i=>i.id===itemId);
+  openConfirm('🗑','항목 삭제',`"${(it.text||'').slice(0,30)}"을 삭제할까요?`,async()=>{
+    const items=(m.items||[]).filter(i=>i.id!==itemId);
+    showLoading('삭제 중...');
+    try{await fdb.collection('modules').doc(moduleId).update({items});}
+    finally{hideLoading();}
+    renderModuleDetail(moduleId);
+  });
+}
+
+async function resetChecks(moduleId){
+  openConfirm('↺','진도 초기화','모든 체크를 해제합니다.',async()=>{
+    const m=modules.find(x=>x.id===moduleId);
+    const items=(m.items||[]).map(it=>({...it,checked:false}));
+    showLoading('초기화 중...');
+    try{await fdb.collection('modules').doc(moduleId).update({items});}
+    finally{hideLoading();}
+    renderModuleDetail(moduleId);
+  });
+}
+
+// ══ MEDIA UPLOAD ══
+function openMediaUpload(moduleId){
+  currentUploadModuleId=moduleId;
+  document.getElementById('ytUrlInput').value='';
+  document.getElementById('ytNameInput').value='';
+  document.getElementById('ytPreview').style.display='none';
+  document.getElementById('ytIframe').src='';
+  document.getElementById('ytErr').style.display='none';
+  document.getElementById('photoPreviewWrap').style.display='none';
+  selectedPhotoBase64=null;
+  selectedPhotoThumb=null;
+  switchMediaTab('youtube');
+  document.getElementById('mediaUploadOverlay').classList.remove('hidden');
+}
+function closeMediaUploadModal(){document.getElementById('mediaUploadOverlay').classList.add('hidden');}
+function switchMediaTab(tab){
+  document.getElementById('ytTab').classList.toggle('active',tab==='youtube');
+  document.getElementById('photoTab').classList.toggle('active',tab==='photo');
+  document.getElementById('ytTabContent').style.display=tab==='youtube'?'':'none';
+  document.getElementById('photoTabContent').style.display=tab==='photo'?'':'none';
+}
+function extractYouTubeId(url){
+  const patterns=[/[?&]v=([^&#]+)/,/youtu\.be\/([^?&#]+)/,/embed\/([^?&#]+)/,/shorts\/([^?&#]+)/];
+  for(const p of patterns){const m=url.match(p);if(m)return m[1];}
+  return null;
+}
+function previewYoutube(){
+  const url=document.getElementById('ytUrlInput').value.trim();
+  const videoId=extractYouTubeId(url);
+  const preview=document.getElementById('ytPreview');
+  const err=document.getElementById('ytErr');
+  if(videoId){
+    document.getElementById('ytIframe').src=`https://www.youtube.com/embed/${videoId}`;
+    preview.style.display='';err.style.display='none';
+    if(!document.getElementById('ytNameInput').value)document.getElementById('ytNameInput').value='유튜브 영상';
+  }else{
+    preview.style.display='none';
+    document.getElementById('ytIframe').src='';
+    if(url&&url.length>5){err.textContent='올바른 YouTube URL을 입력해주세요.';err.style.display='';}
+    else{err.style.display='none';}
+  }
+}
+async function saveYoutube(){
+  const url=document.getElementById('ytUrlInput').value.trim();
+  const videoId=extractYouTubeId(url);
+  const err=document.getElementById('ytErr');
+  if(!videoId){err.textContent='올바른 YouTube URL을 입력해주세요.';err.style.display='';return;}
+  const name=document.getElementById('ytNameInput').value.trim()||'유튜브 영상';
+  showLoading('저장 중...');
+  try{
+    await fdb.collection('modules').doc(currentUploadModuleId).collection('media').add({
+      type:'youtube',name,videoId,createdAt:Date.now(),createdBy:currentUser.uid
+    });
+    closeMediaUploadModal();
+    renderModuleDetail(currentUploadModuleId);
+  }catch(e){
+    err.textContent='저장 중 오류: '+e.message;err.style.display='';
+  }finally{hideLoading();}
+}
+function compressPhoto(file,maxSize,quality){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        let w=img.width,h=img.height;
+        if(w>maxSize||h>maxSize){if(w>h){h=Math.round(h*maxSize/w);w=maxSize;}else{w=Math.round(w*maxSize/h);h=maxSize;}}
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function handlePhotoSelect(input){
+  const file=input.files[0];if(!file)return;
+  showLoading('사진 처리 중...');
+  try{
+    const base64=await compressPhoto(file,800,0.7);
+    const thumb=await compressPhoto(file,200,0.6);
+    selectedPhotoBase64=base64;
+    selectedPhotoThumb=thumb;
+    document.getElementById('photoPreviewImg').src=base64;
+    document.getElementById('photoPreviewWrap').style.display='';
+    document.getElementById('photoNameInput').value=file.name.replace(/\.[^.]+$/,'');
+    const sizeKB=Math.round(base64.length*0.75/1024);
+    document.getElementById('photoSizeInfo').textContent=`압축 후 약 ${sizeKB} KB`;
+  }finally{hideLoading();}
+  input.value='';
+}
+async function savePhoto(){
+  if(!selectedPhotoBase64){alert('사진을 먼저 선택해주세요.');return;}
+  const name=document.getElementById('photoNameInput').value.trim()||'사진';
+  const sizeKB=Math.round(selectedPhotoBase64.length*0.75/1024);
+  if(sizeKB>900){alert('사진이 너무 큽니다 ('+sizeKB+'KB). 더 작은 사진을 사용해주세요.');return;}
+  showLoading('사진 저장 중...');
+  try{
+    await fdb.collection('modules').doc(currentUploadModuleId).collection('media').add({
+      type:'photo',name,base64:selectedPhotoBase64,thumb:selectedPhotoThumb,sizeKB,createdAt:Date.now(),createdBy:currentUser.uid
+    });
+    selectedPhotoBase64=null;selectedPhotoThumb=null;
+    closeMediaUploadModal();
+    renderModuleDetail(currentUploadModuleId);
+  }catch(e){
+    alert('저장 중 오류: '+e.message);
+  }finally{hideLoading();}
+}
+
+// ══ MEDIA PLAYER ══
+function playVideo(videoId,name){
+  document.getElementById('mediaPlayerArea').innerHTML=
+    `<div class="video-player-wrap"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen style="border:none"></iframe></div>`;
+  document.getElementById('mediaModalTitle').textContent=name;
+  document.getElementById('mediaModalInfo').textContent='YouTube 영상';
+  document.getElementById('mediaModalOverlay').classList.remove('hidden');
+}
+function viewPhoto(base64,name){
+  document.getElementById('mediaPlayerArea').innerHTML=
+    `<div class="photo-preview-wrap"><img src="${base64}" alt="${esc(name)}" style="max-width:100%;max-height:70vh;border-radius:8px"></div>`;
+  document.getElementById('mediaModalTitle').textContent=name;
+  document.getElementById('mediaModalInfo').textContent='사진';
+  document.getElementById('mediaModalOverlay').classList.remove('hidden');
+}
+function closeMediaModal(){
+  const el=document.getElementById('mediaPlayerArea');
+  const fr=el.querySelector('iframe');if(fr)fr.src='';
+  el.innerHTML='';
+  document.getElementById('mediaModalOverlay').classList.add('hidden');
+}
+async function deleteMedia(moduleId,mediaId){
+  openConfirm('🗑','미디어 삭제','이 파일을 삭제할까요?',async()=>{
+    showLoading('삭제 중...');
+    try{await fdb.collection('modules').doc(moduleId).collection('media').doc(mediaId).delete();}
+    finally{hideLoading();}
+    renderModuleDetail(moduleId);
+  });
+}
+
+// ══ PATIENTS ══
+function renderPatientList(){
+  const q=(document.getElementById('patientSearch').value||'').toLowerCase();
+  const list=document.getElementById('patientList');
+  let filtered=patients.filter(p=>!q||p.name.toLowerCase().includes(q)||(p.phone||'').includes(q));
+  if(!filtered.length){list.innerHTML='<div style="text-align:center;padding:28px;color:var(--muted);font-size:13px">환자 정보가 없어요.</div>';return;}
+  list.innerHTML=filtered.map(p=>`
+    <div class="patient-item ${p.id===currentPatientId?'active':''}" onclick="selectPatient('${p.id}')">
+      <div class="patient-avatar">${p.name.charAt(0)}</div>
+      <div class="patient-info">
+        <div class="patient-name">${esc(p.name)}</div>
+        <div class="patient-phone">${p.phone||'연락처 없음'} · ${p.purchases?p.purchases.length:0}건</div>
+      </div>
+    </div>`).join('');
+}
+function selectPatient(id){currentPatientId=id;renderPatientList();renderPatientDetail(id);}
+function renderPatientDetail(id){
+  const p=patients.find(x=>x.id===id);if(!p) return;
+  const purchases=(p.purchases||[]).sort((a,b)=>b.date.localeCompare(a.date));
+  const totalAmt=purchases.reduce((s,x)=>s+(Number(x.amount)||0),0);
+  const detail=document.getElementById('patientDetail');
+  detail.innerHTML=`
+    <div class="patient-header-card">
+      <div style="display:flex;align-items:flex-start;gap:16px;flex:1">
+        <div class="ph-avatar">${p.name.charAt(0)}</div>
+        <div class="ph-info">
+          <div class="ph-name">${esc(p.name)}</div>
+          <div class="ph-meta">${p.phone?`📞 ${esc(p.phone)}`:'연락처 없음'}${p.dob?` · 🎂 ${p.dob}`:''}${p.gender?` · ${p.gender}`:''}</div>
+          ${p.allergy?`<div style="margin-top:6px;font-size:13px;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:8px;display:inline-block">⚠️ ${esc(p.allergy)}</div>`:''}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-white btn-sm" onclick="openPatientModal('${p.id}')">✏️ 편집</button>
+        <button class="btn btn-white btn-sm" onclick="deletePatient('${p.id}')">🗑</button>
+      </div>
+    </div>
+    ${p.memo?`<div class="section-card"><div class="section-body" style="font-size:14px;color:var(--muted)">📝 ${esc(p.memo)}</div></div>`:''}
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">🛒 구매 내역 <span style="font-size:12px;color:var(--muted);font-weight:600">(${purchases.length}건 · 총 ${totalAmt.toLocaleString()}원)</span></div>
+        <button class="btn btn-primary btn-sm" onclick="openPurchaseModal('${p.id}')">＋ 추가</button>
+      </div>
+      <div class="section-body" style="padding:0;overflow-x:auto">
+        ${purchases.length===0?`<div style="text-align:center;padding:28px;color:var(--muted);font-size:13px">구매 내역이 없어요.</div>`
+        :`<table class="purchase-table"><thead><tr><th>날짜</th><th>제품명</th><th>수량</th><th>정가</th><th>판매가</th><th>할인</th><th>담당</th><th>메모</th><th></th></tr></thead>
+        <tbody>${purchases.map(pu=>{
+          const orig=Number(pu.origPrice)||0,sale=Number(pu.amount)||0;
+          const discAmt=orig&&sale&&orig>sale?orig-sale:0,discRate=orig&&discAmt?Math.round(discAmt/orig*100):0;
+          return `<tr><td style="white-space:nowrap">${pu.date}</td><td style="font-weight:600">${esc(pu.product)}</td><td>${pu.qty||1}</td>
+          <td style="white-space:nowrap;color:var(--muted)">${orig?orig.toLocaleString()+'원':'-'}</td>
+          <td style="white-space:nowrap;font-weight:600">${sale?sale.toLocaleString()+'원':'-'}</td>
+          <td style="white-space:nowrap">${discAmt?`<span style="background:#FEF2F2;color:var(--danger);font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px">-${discAmt.toLocaleString()}원 (${discRate}%)</span>`:'-'}</td>
+          <td>${esc(pu.staff||'-')}</td><td style="color:var(--muted)">${esc(pu.memo||'-')}</td>
+          <td><div class="purchase-actions"><button class="icon-btn" onclick="openPurchaseModal('${p.id}','${pu.id}')">✏️</button><button class="icon-btn danger" onclick="deletePurchase('${p.id}','${pu.id}')">🗑</button></div></td>
+          </tr>`;}).join('')}</tbody></table>`}
+      </div>
+    </div>`;
+}
+function openPatientModal(id){
+  editingPatientId=id||null;
+  const p=id?patients.find(x=>x.id===id):null;
+  document.getElementById('patientModalTitle').textContent=p?'환자 편집':'환자 추가';
+  document.getElementById('patientName').value=p?p.name:'';
+  document.getElementById('patientPhone').value=p?(p.phone||''):'';
+  document.getElementById('patientDob').value=p?(p.dob||''):'';
+  document.getElementById('patientGender').value=p?(p.gender||''):'';
+  document.getElementById('patientAllergy').value=p?(p.allergy||''):'';
+  document.getElementById('patientMemo').value=p?(p.memo||''):'';
+  document.getElementById('patientModalOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('patientName').focus(),100);
+}
+function closePatientModal(){document.getElementById('patientModalOverlay').classList.add('hidden')}
+async function savePatient(){
+  const name=document.getElementById('patientName').value.trim();
+  if(!name){document.getElementById('patientName').focus();return;}
+  const data={name,phone:document.getElementById('patientPhone').value.trim(),dob:document.getElementById('patientDob').value,gender:document.getElementById('patientGender').value,allergy:document.getElementById('patientAllergy').value.trim(),memo:document.getElementById('patientMemo').value.trim()};
+  showLoading('저장 중...');
+  try{
+    if(editingPatientId){
+      await fdb.collection('patients').doc(editingPatientId).update(data);
+    }else{
+      const ref=await fdb.collection('patients').add({...data,purchases:[],createdAt:Date.now(),createdBy:currentUser.uid});
+      currentPatientId=ref.id;
+    }
+  }finally{hideLoading();}
+  closePatientModal();
+}
+async function deletePatient(id){
+  const p=patients.find(x=>x.id===id);
+  openConfirm('🗑',`"${p.name}" 삭제`,'이 환자의 모든 정보와 구매 내역이 삭제됩니다.',async()=>{
+    showLoading('삭제 중...');
+    try{await fdb.collection('patients').doc(id).delete();}
+    finally{hideLoading();}
+    currentPatientId=null;
+    document.getElementById('patientDetail').innerHTML='<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">환자를 선택하세요</div></div>';
+  });
+}
+function openPurchaseModal(patientId,purchaseId){
+  purchasePatientId=patientId;editingPurchaseId=purchaseId||null;
+  const p=patients.find(x=>x.id===patientId);
+  const pu=purchaseId?(p.purchases||[]).find(x=>x.id===purchaseId):null;
+  document.getElementById('purchaseModalTitle').textContent=pu?'구매 내역 편집':'구매 내역 추가';
+  document.getElementById('purchaseDate').value=pu?pu.date:new Date().toISOString().split('T')[0];
+  document.getElementById('purchaseProduct').value=pu?(pu.product||''):'';
+  document.getElementById('purchaseQty').value=pu?(pu.qty||1):1;
+  document.getElementById('purchaseOrigPrice').value=pu?(pu.origPrice||''):'';
+  document.getElementById('purchaseAmount').value=pu?(pu.amount||''):'';
+  document.getElementById('purchaseDiscAmt').value='';
+  document.getElementById('purchaseDiscRate').value='';
+  document.getElementById('purchaseStaff').value=pu?(pu.staff||''):(currentUser.name||'');
+  document.getElementById('purchaseMemo').value=pu?(pu.memo||''):'';
+  if(pu&&pu.origPrice&&pu.amount) calcPurchaseDiscount();
+  document.getElementById('purchaseModalOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('purchaseProduct').focus(),100);
+}
+function closePurchaseModal(){document.getElementById('purchaseModalOverlay').classList.add('hidden')}
+function calcPurchaseDiscount(){
+  const orig=Number(document.getElementById('purchaseOrigPrice').value)||0;
+  const sale=Number(document.getElementById('purchaseAmount').value)||0;
+  if(orig&&sale&&orig>sale){
+    document.getElementById('purchaseDiscAmt').value=(orig-sale).toLocaleString()+'원';
+    document.getElementById('purchaseDiscRate').value=Math.round((orig-sale)/orig*100)+'%';
+  }else{document.getElementById('purchaseDiscAmt').value='';document.getElementById('purchaseDiscRate').value='';}
+}
+async function savePurchase(){
+  const product=document.getElementById('purchaseProduct').value.trim();
+  if(!product){document.getElementById('purchaseProduct').focus();return;}
+  const data={id:editingPurchaseId||uid(),product,date:document.getElementById('purchaseDate').value,qty:document.getElementById('purchaseQty').value||1,origPrice:document.getElementById('purchaseOrigPrice').value,amount:document.getElementById('purchaseAmount').value,staff:document.getElementById('purchaseStaff').value.trim(),memo:document.getElementById('purchaseMemo').value.trim(),createdAt:Date.now()};
+  const p=patients.find(x=>x.id===purchasePatientId);if(!p) return;
+  let purchases=[...(p.purchases||[])];
+  if(editingPurchaseId){purchases=purchases.map(pu=>pu.id===editingPurchaseId?{...pu,...data}:pu);}
+  else{purchases.push(data);}
+  showLoading('저장 중...');
+  try{await fdb.collection('patients').doc(purchasePatientId).update({purchases});}
+  finally{hideLoading();}
+  currentPatientId=purchasePatientId;
+  closePurchaseModal();
+}
+async function deletePurchase(patientId,purchaseId){
+  openConfirm('🗑','구매 내역 삭제','이 구매 내역을 삭제할까요?',async()=>{
+    const p=patients.find(x=>x.id===patientId);
+    const purchases=(p.purchases||[]).filter(x=>x.id!==purchaseId);
+    showLoading('삭제 중...');
+    try{await fdb.collection('patients').doc(patientId).update({purchases});}
+    finally{hideLoading();}
+    renderPatientDetail(patientId);
+  });
+}
+
+// ══ SUPPLEMENTS ══
+function renderSuppList(){
+  const cat=document.getElementById('suppCatFilter').value;
+  const sale=document.getElementById('suppSaleFilter').value;
+  let list=supps.filter(s=>(!cat||s.category===cat));
+  if(sale==='sale') list=list.filter(s=>s.discPrice);
+  if(sale==='normal') list=list.filter(s=>!s.discPrice);
+  document.getElementById('suppEmpty').style.display=list.length?'none':'block';
+  document.getElementById('suppTable').style.display=list.length?'':'none';
+  const body=document.getElementById('suppBody');
+  body.innerHTML=list.map(s=>{
+    const orig=Number(s.price)||0,disc=s.discPrice?Number(s.discPrice):0;
+    const rate=orig&&disc?Math.round((orig-disc)/orig*100):0;
+    const catColors={'비타민':'#EFF6FF:#2563EB','오메가3':'#F0FDF4:#16A34A','유산균':'#FDF4FF:#9333EA','미네랄':'#FFF7ED:#EA580C','콜라겐':'#FDF2F8:#DB2777','한방/홍삼':'#FEF2F2:#DC2626','기타':'#F1F5F9:#64748B'};
+    const [cbg,ctxt]=(catColors[s.category]||'#F1F5F9:#64748B').split(':');
+    return `<tr>
+      <td><div style="font-weight:700">${esc(s.name)}</div>${s.brand?`<div style="font-size:11px;color:var(--muted)">${esc(s.brand)}</div>`:''}</td>
+      <td><span class="supp-cat-badge" style="background:${cbg};color:${ctxt}">${esc(s.category)}</span></td>
+      <td style="white-space:nowrap">${orig.toLocaleString()}원</td>
+      <td style="white-space:nowrap">${disc?`<span class="price-disc">${disc.toLocaleString()}원</span>`:'-'}</td>
+      <td>${rate?`<span class="discount-badge ${rate>=30?'high':rate<=10?'low':''}">-${(orig-disc).toLocaleString()}원 (-${rate}%)</span>`:'-'}</td>
+      <td>${disc?`<span class="sale-badge">할인 중</span>`:`<span style="font-size:11px;color:var(--muted)">정상가</span>`}</td>
+      <td style="font-size:12px;color:var(--muted);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.note||'-')}</td>
+      <td><div class="supp-actions"><button class="icon-btn" onclick="openSuppModal('${s.id}')">✏️</button><button class="icon-btn danger" onclick="deleteSupp('${s.id}')">🗑</button></div></td>
+    </tr>`;
+  }).join('');
+}
+function openSuppModal(id){
+  editingSuppId=id||null;
+  const s=id?supps.find(x=>x.id===id):null;
+  document.getElementById('suppModalTitle').textContent=s?'제품 편집':'제품 추가';
+  document.getElementById('suppName').value=s?s.name:'';
+  document.getElementById('suppBrand').value=s?(s.brand||''):'';
+  document.getElementById('suppCat').value=s?(s.category||'비타민'):'비타민';
+  document.getElementById('suppPrice').value=s?(s.price||''):'';
+  document.getElementById('suppDiscPrice').value=s?(s.discPrice||''):'';
+  document.getElementById('suppDiscRate').value='';
+  document.getElementById('suppNote').value=s?(s.note||''):'';
+  if(s&&s.price&&s.discPrice) calcDiscount();
+  document.getElementById('suppModalOverlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('suppName').focus(),100);
+}
+function closeSuppModal(){document.getElementById('suppModalOverlay').classList.add('hidden')}
+function calcDiscount(){
+  const p=Number(document.getElementById('suppPrice').value)||0;
+  const d=Number(document.getElementById('suppDiscPrice').value)||0;
+  document.getElementById('suppDiscRate').value=p&&d?Math.round((p-d)/p*100)+'%':'';
+}
+async function saveSupp(){
+  const name=document.getElementById('suppName').value.trim();
+  if(!name){document.getElementById('suppName').focus();return;}
+  const price=document.getElementById('suppPrice').value;
+  if(!price){document.getElementById('suppPrice').focus();return;}
+  const data={name,brand:document.getElementById('suppBrand').value.trim(),category:document.getElementById('suppCat').value,price,discPrice:document.getElementById('suppDiscPrice').value,note:document.getElementById('suppNote').value.trim()};
+  showLoading('저장 중...');
+  try{
+    if(editingSuppId){await fdb.collection('supplements').doc(editingSuppId).update(data);}
+    else{await fdb.collection('supplements').add({...data,createdAt:Date.now(),createdBy:currentUser.uid});}
+  }finally{hideLoading();}
+  closeSuppModal();
+}
+async function deleteSupp(id){
+  const s=supps.find(x=>x.id===id);
+  openConfirm('🗑',`"${s.name}" 삭제`,'이 제품을 목록에서 삭제할까요?',async()=>{
+    showLoading('삭제 중...');
+    try{await fdb.collection('supplements').doc(id).delete();}
+    finally{hideLoading();}
+  });
+}
+
+// ══ USER MANAGEMENT ══
+async function renderUserList(){
+  try{
+    const snap=await fdb.collection('users').orderBy('createdAt').get();
+    const users=snap.docs.map(d=>d.data());
+    const list=document.getElementById('userList');
+    list.innerHTML=users.map(u=>`
+      <div class="user-card">
+        <div class="user-avatar ${u.role}">${u.name.charAt(0)}</div>
+        <div class="user-info"><div class="user-name">${esc(u.name)}</div><div class="user-id">@${esc(u.username)}</div></div>
+        <span class="role-badge ${u.role}">${u.role==='admin'?'관리자':'일반 직원'}</span>
+        <div style="display:flex;gap:6px;margin-left:8px">
+          ${u.uid!==currentUser.uid?`<button class="icon-btn" onclick="toggleUserRole('${u.uid}','${u.role}')">🔄</button><button class="icon-btn danger" onclick="deleteUserAdmin('${u.uid}','${u.name}')">🗑</button>`:`<span style="font-size:12px;color:var(--muted)">내 계정</span>`}
+        </div>
+      </div>`).join('');
+  }catch(e){console.error('renderUserList error:',e);}
+}
+async function toggleUserRole(uid2,currentRole){
+  const newRole=currentRole==='admin'?'staff':'admin';
+  showLoading('권한 변경 중...');
+  try{await fdb.collection('users').doc(uid2).update({role:newRole});}
+  finally{hideLoading();}
+  renderUserList();
+}
+async function deleteUserAdmin(uid2,name){
+  openConfirm('🗑',`"${name}" 계정 삭제`,'이 직원 계정을 삭제합니다. (Firebase Auth는 별도 처리 필요)',async()=>{
+    showLoading('삭제 중...');
+    try{await fdb.collection('users').doc(uid2).delete();}
+    finally{hideLoading();}
+    renderUserList();
+  });
+}
+// Keep openUserModal / closeUserModal / saveUser stubs for compat
+function openUserModal(){}
+function closeUserModal(){}
+function saveUser(){}
+
+// ══ CONFIRM ══
+function openConfirm(icon,msg,sub,onOk){
+  document.getElementById('confirmIcon').textContent=icon;
+  document.getElementById('confirmMsg').textContent=msg;
+  document.getElementById('confirmSub').innerHTML=sub;
+  document.getElementById('confirmOkBtn').onclick=()=>{closeConfirm();if(onOk)onOk();};
+  document.getElementById('confirmOverlay').classList.remove('hidden');
+}
+function closeConfirm(){document.getElementById('confirmOverlay').classList.add('hidden')}
+
+// ══ MODAL CLOSE LISTENERS ══
+['moduleModalOverlay','itemModalOverlay','mediaModalOverlay','mediaUploadOverlay','patientModalOverlay','purchaseModalOverlay','suppModalOverlay','userModalOverlay','confirmOverlay'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('click',e=>{if(e.target===e.currentTarget){
+    if(id==='mediaModalOverlay') closeMediaModal();
+    else if(id==='mediaUploadOverlay') closeMediaUploadModal();
+    else el.classList.add('hidden');
+  }});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeMediaModal();closeMediaUploadModal();
+    ['moduleModalOverlay','itemModalOverlay','patientModalOverlay','purchaseModalOverlay','suppModalOverlay','userModalOverlay','confirmOverlay'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.classList.add('hidden');
+    });
+  }
+});
+
+// ══ INIT ══
+// Auth state change handles everything via onAuthStateChanged above
+document.getElementById('loginScreen').style.display='flex';
+document.getElementById('app').style.display='none';
+
+// Add spin animation
+const style=document.createElement('style');
+style.textContent='@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
